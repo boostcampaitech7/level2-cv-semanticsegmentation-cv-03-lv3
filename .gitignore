@@ -165,6 +165,7 @@ cython_debug/
 *.tar.gz
 *.jpg
 *.png
+*.xlsx
 
 # annotations
 *.json
