@@ -1,0 +1,27 @@
+# Data root
+image_root: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-03-lv3/data/train/DCM"
+label_root: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-03-lv3/data/train/outputs_json"
+
+# Hyperparameter
+train_batch_size: 8
+val_batch_size: 4
+learning_rate: 1e-4
+random_seed: 42
+
+# Train
+model: 'unetplusplus'
+num_epoch: 200
+val_every: 1
+loss: 'diceiou_loss'
+scheduler: 'CosineAnnealingWarmRestarts'
+
+# Test
+test_image_root: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-03-lv3/data/test/DCM"
+
+# Save directory
+save_dir: "checkpoints"
+save_file_name: "unet++_diceiou_best_model.pt"
+csv_file_name: "output_unet++_diceiou.csv"
+
+project_name: '실험 주제'
+detail: '세부 내용'
