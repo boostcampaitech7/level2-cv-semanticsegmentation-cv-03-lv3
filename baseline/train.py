@@ -8,6 +8,7 @@ from tqdm.auto import tqdm
 import albumentations as A
 from omegaconf import OmegaConf
 import argparse
+import wandb
 
 import torch
 import torch.nn.functional as F
@@ -15,6 +16,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.cuda.amp import autocast, GradScaler
 
+from utils.wandb import set_wandb  # 추가1
 from dataset import XRayDataset
 from model import Model_Selector
 from loss import Loss_Selector
@@ -65,6 +67,8 @@ def train_data(IMAGE_ROOT, LABEL_ROOT):
 
 
 def main(cfg):
+    set_wandb(cfg)    # 추가1
+
     if not os.path.exists(cfg.save_dir):                                                           
         os.makedirs(cfg.save_dir)
 
@@ -101,7 +105,7 @@ def main(cfg):
     valid_loader = DataLoader(dataset=valid_dataset, 
                               batch_size=cfg.val_batch_size,
                               shuffle=False,
-                              num_workers=0,
+                              num_workers=4,
                               drop_last=False
                               )
 
@@ -162,8 +166,8 @@ def main(cfg):
                 cnt += 1
                 
                 outputs = torch.sigmoid(outputs)
-                outputs = (outputs > thr).detach().cpu()
-                masks = masks.detach().cpu()
+                outputs = (outputs > thr)    #.detach().cpu()
+                # masks = masks.detach().cpu()
                 
                 dice = dice_coef(outputs, masks)
                 dices.append(dice.detach().cpu())
@@ -179,7 +183,7 @@ def main(cfg):
         
         avg_dice = torch.mean(dices_per_class).item()
         
-        return avg_dice
+        return avg_dice , dices_per_class, total_loss / len(data_loader)
 
     # Train
     def train(model, data_loader, val_loader, criterion, optimizer, scheduler, accumulation_steps=4):
@@ -213,8 +217,14 @@ def main(cfg):
                 if (step + 1) % accumulation_steps == 0 or (step + 1) == len(data_loader):
                     scaler.step(optimizer)
                     scaler.update()
-
                     optimizer.zero_grad()
+                
+                wandb.log({
+                    "Epoch" : epoch,
+                    "train/loss": loss.item(),
+                    "train/learning_rate": scheduler.get_last_lr()[0]
+                }, step=epoch)
+
 
                 if (step + 1) % 25 == 0:
                     print(
@@ -227,13 +237,22 @@ def main(cfg):
             scheduler.step()
 
             if (epoch + 1) % cfg.val_every == 0:
-                dice = validation(epoch + 1, model, val_loader, criterion)
+                dice,  dices_per_class, val_loss = validation(epoch + 1, model, val_loader, criterion)
                 
+                wandb.log({
+                    "validation Loss": val_loss,
+                    "Avg dice_score": dice,
+                    **{f"Dice/{class_name}": dice.item() for class_name, dice in zip(CLASSES, dices_per_class)},
+                }, step=epoch)
+
+
                 if best_dice < dice:
                     print(f"Best performance at epoch: {epoch + 1}, {best_dice:.4f} -> {dice:.4f}")
                     print(f"Save model in {cfg.save_dir}")
                     best_dice = dice
                     save_model(model)
+
+                    wandb.save(f"{cfg.save_dir}/best_model.pth")
 
     # Setting
     print(f"Selected model: {cfg.model}")
