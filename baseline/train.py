@@ -14,11 +14,14 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.cuda.amp import autocast, GradScaler
+import wandb
+from utils.wandb import set_wandb
 
 from dataset import XRayDataset
 from model import Model_Selector
 from loss import Loss_Selector
 from scheduler import Scheduler_Selector
+from utils.early_stop import EarlyStopping
 
 CLASSES = [
     'finger-1', 'finger-2', 'finger-3', 'finger-4', 'finger-5',
@@ -64,20 +67,35 @@ def train_data(IMAGE_ROOT, LABEL_ROOT):
     return pngs, jsons
 
 
-def main(cfg):
+def main(cfg, arg):
+    set_wandb(cfg, arg)
+    
     if not os.path.exists(cfg.save_dir):                                                           
         os.makedirs(cfg.save_dir)
 
-    # DataLoader
-    tf = A.Compose([
-        # A.GaussianBlur(blur_limit=(3, 7), p = 0.3),
-        A.Resize(256, 256)
+    tf_geometry = A.OneOf([
+            A.HorizontalFlip(p=0.3),  
+            A.Rotate(limit=(-45, 45), p=0.3)
+        ], p=1.0) 
+
+    tf_pixel = A.OneOf([
+            A.CLAHE(clip_limit=2.0, tile_grid_size=(8, 8), p=0.3),
+            A.Sharpen(alpha=(0.1, 0.5), lightness=(0.5, 1.5), p=0.3),
+            A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.3)
+        ], p=1.0)  
+
+    tf_train = A.Compose([
+        A.Resize(cfg.image_size, cfg.image_size), 
+        tf_geometry,     
+        tf_pixel         
     ])
+
+    tf_val = A.Resize(cfg.image_size, cfg.image_size)
 
     pngs, jsons = train_data(cfg.image_root, cfg.label_root)
 
     train_dataset = XRayDataset(is_train=True, 
-                                transforms=tf, 
+                                transforms=tf_train, 
                                 IMAGE_ROOT=cfg.image_root, 
                                 LABEL_ROOT= cfg.label_root,
                                 pngs=pngs, 
@@ -85,7 +103,7 @@ def main(cfg):
                                 )
     
     valid_dataset = XRayDataset(is_train=False, 
-                                transforms=tf, 
+                                transforms=tf_val, 
                                 IMAGE_ROOT=cfg.image_root,
                                 LABEL_ROOT=cfg.label_root,
                                 pngs=pngs, 
@@ -94,14 +112,14 @@ def main(cfg):
     train_loader = DataLoader(dataset=train_dataset, 
                               batch_size=cfg.train_batch_size,
                               shuffle=True,
-                              num_workers=8,
+                              num_workers=cfg.train_batch_size,
                               drop_last=True,
                               )
 
     valid_loader = DataLoader(dataset=valid_dataset, 
                               batch_size=cfg.val_batch_size,
                               shuffle=False,
-                              num_workers=0,
+                              num_workers=cfg.val_batch_size,
                               drop_last=False
                               )
 
@@ -179,15 +197,18 @@ def main(cfg):
         
         avg_dice = torch.mean(dices_per_class).item()
         
-        return avg_dice
+        return avg_dice, dices_per_class, total_loss / len(data_loader)
 
     # Train
-    def train(model, data_loader, val_loader, criterion, optimizer, scheduler, accumulation_steps=4):
+    def train(model, data_loader, val_loader, criterion, optimizer, scheduler, accumulation_steps=cfg.accumulation_steps, patience=cfg.patience):
         print(f'Start training..')
-        
+
         best_dice = 0.
         scaler = GradScaler()
         scheduler = scheduler
+
+        # EarlyStopping 객체 초기화
+        early_stopping = EarlyStopping(patience=patience, mode='min', verbose=True, path=cfg.save_file_name)
 
         for epoch in range(cfg.num_epoch):
             model.train()
@@ -195,19 +216,19 @@ def main(cfg):
             for step, (images, masks) in enumerate(data_loader):            
                 images, masks = images.cuda(), masks.cuda()
                 model = model.cuda()
-                
+
                 optimizer.zero_grad()
 
                 with autocast():
                     outputs = model(images)
 
-                    if isinstance(outputs, dict): #SMP
+                    if isinstance(outputs, dict):
                         outputs = outputs['out']
-                    elif isinstance(outputs, list): #MONAI
+                    elif isinstance(outputs, list):
                         outputs = outputs[0]
 
                     loss = criterion(outputs, masks)
-                
+
                 scaler.scale(loss).backward()
 
                 if (step + 1) % accumulation_steps == 0 or (step + 1) == len(data_loader):
@@ -216,6 +237,12 @@ def main(cfg):
 
                     optimizer.zero_grad()
 
+                wandb.log({
+                    "Epoch" : epoch,
+                    "train/loss": loss.item(),
+                    "train/learning_rate": scheduler.get_last_lr()[0]
+                }, step=epoch)
+
                 if (step + 1) % 25 == 0:
                     print(
                         f'{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | '
@@ -223,17 +250,31 @@ def main(cfg):
                         f'Step [{step+1}/{len(data_loader)}], '
                         f'Loss: {round(loss.item(),4)}'
                     )
-                
+
             scheduler.step()
 
             if (epoch + 1) % cfg.val_every == 0:
-                dice = validation(epoch + 1, model, val_loader, criterion)
-                
+                dice,  dices_per_class, val_loss = validation(epoch + 1, model, val_loader, criterion)
+
+                wandb.log({
+                    "validation Loss": val_loss,
+                    "Avg dice_score": dice,
+                    **{f"Dice/{class_name}": dice.item() for class_name, dice in zip(CLASSES, dices_per_class)},
+                }, step=epoch)
+
                 if best_dice < dice:
                     print(f"Best performance at epoch: {epoch + 1}, {best_dice:.4f} -> {dice:.4f}")
                     print(f"Save model in {cfg.save_dir}")
                     best_dice = dice
                     save_model(model)
+
+                    wandb.save(f"{cfg.save_dir}/best_model.pth")
+
+            # # EarlyStopping 체크
+            # if early_stopping.step(loss, model, epoch):
+            #     print(f'Early stopping at epoch {epoch+1}')
+            #     break  # 학습 종료
+
 
     # Setting
     print(f"Selected model: {cfg.model}")
@@ -262,4 +303,4 @@ if __name__ == '__main__':
     with open(args.config, 'r') as f:
         cfg = OmegaConf.load(f)
 
-    main(cfg)
+    main(cfg, args.config)
