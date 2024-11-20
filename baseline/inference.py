@@ -88,9 +88,9 @@ def main(cfg):
                         
         return rles, filename_and_class
     
-    tf = A.Resize(512, 512)
+    tf = A.Resize(cfg.image_size, cfg.image_size)
     pngs_inference = inference_data(cfg.test_image_root)
-    test_dataset = XRayInferenceDataset(transforms=tf, pngs_inference=pngs_inference)
+    test_dataset = XRayInferenceDataset(transforms=tf,TEST_IMAGE_ROOT=cfg.test_image_root, pngs_inference=pngs_inference)
     test_loader = DataLoader(
         dataset=test_dataset, 
         batch_size=4,
@@ -121,4 +121,6 @@ if __name__ == '__main__':
     with open(args.config, 'r') as f:
         cfg = OmegaConf.load(f)
 
+    print(type(cfg.test_image_root))
+    print(cfg.test_image_root)
     main(cfg)
