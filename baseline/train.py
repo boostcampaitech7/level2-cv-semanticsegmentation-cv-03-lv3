@@ -8,6 +8,7 @@ from tqdm.auto import tqdm
 import albumentations as A
 from omegaconf import OmegaConf
 import argparse
+import wandb
 
 import torch
 import torch.nn.functional as F
@@ -17,6 +18,7 @@ from torch.cuda.amp import autocast, GradScaler
 import wandb
 from utils.wandb import set_wandb
 
+from utils.wandb import set_wandb  # 추가1
 from dataset import XRayDataset
 from model import Model_Selector
 from loss import Loss_Selector
@@ -180,8 +182,8 @@ def main(cfg, arg):
                 cnt += 1
                 
                 outputs = torch.sigmoid(outputs)
-                outputs = (outputs > thr).detach().cpu()
-                masks = masks.detach().cpu()
+                outputs = (outputs > thr)    #.detach().cpu()
+                # masks = masks.detach().cpu()
                 
                 dice = dice_coef(outputs, masks)
                 dices.append(dice.detach().cpu())
