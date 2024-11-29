@@ -17,6 +17,7 @@ import ttach as tta
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a segmentation model")
+    # config_path를 명령줄 인자로 받을 수 있게 함
     parser.add_argument('--config', type=str, required=True, help="Path to the config.yaml file")
     return parser.parse_args()
 
@@ -58,15 +59,6 @@ def main(cfg):
         runs[1::2] -= runs[::2]
         return ' '.join(str(x) for x in runs)
 
-    class ModelOutputWrapper(torch.nn.Module):
-        def __init__(self, model):
-            super().__init__()
-            self.model = model
-
-        def forward(self, images):
-            outputs = self.model(images)
-            return outputs[0]
-            
     def test(model, data_loader, thr=0.5):
         tta_transforms = tta.Compose(
             [
@@ -76,6 +68,7 @@ def main(cfg):
         )
         model = model.cuda()
         model.eval()
+
         rles = []
         filename_and_class = []
         with torch.no_grad():
@@ -114,7 +107,7 @@ def main(cfg):
         num_workers=4,
         drop_last=False
         )
-    model = ModelOutputWrapper(model)
+    
     rles, filename_and_class = test(model, test_loader)
     classes, filename = zip(*[x.split("_") for x in filename_and_class])
     image_name = [os.path.basename(f) for f in filename]
@@ -129,8 +122,11 @@ def main(cfg):
 
 
 if __name__ == '__main__':
+
+    # 명령줄 인자로 받은 config_path
     args = parse_args()
 
+    # config.yaml 파일 경로
     with open(args.config, 'r') as f:
         cfg = OmegaConf.load(f)
 
