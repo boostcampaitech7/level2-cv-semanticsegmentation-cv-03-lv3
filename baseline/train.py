@@ -23,6 +23,7 @@ from loss import Loss_Selector
 from scheduler import Scheduler_Selector
 from utils.early_stop import EarlyStopping
 
+
 CLASSES = [
     'finger-1', 'finger-2', 'finger-3', 'finger-4', 'finger-5',
     'finger-6', 'finger-7', 'finger-8', 'finger-9', 'finger-10',
@@ -35,7 +36,6 @@ CLASSES = [
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a segmentation model")
-    # config_path를 명령줄 인자로 받을 수 있게 함
     parser.add_argument('--config', type=str, required=True, help="Path to the config.yaml file")
     return parser.parse_args()
 
@@ -75,7 +75,7 @@ def main(cfg, arg):
 
     tf_pixel = A.OneOf([
             A.CLAHE(clip_limit=2.0, tile_grid_size=(8, 8), p=0.5),
-            A.Sharpen(alpha=(0.1, 0.5), lightness=(0.5, 1.5), p=0.5)
+            A.Sharpen(alpha=(0.1, 0.5), lightness=(0.5, 1.5), p=0.5),
             A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5)
         ], p=1.0)  
 
@@ -165,7 +165,6 @@ def main(cfg, arg):
                 output_h, output_w = outputs.size(-2), outputs.size(-1)
                 mask_h, mask_w = masks.size(-2), masks.size(-1)
                 
-                # gt와 prediction의 크기가 다른 경우 prediction을 gt에 맞춰 interpolation 합니다.
                 if output_h != mask_h or output_w != mask_w:
                     outputs = F.interpolate(outputs, size=(mask_h, mask_w), mode="bilinear")
                 
@@ -201,7 +200,6 @@ def main(cfg, arg):
         scaler = GradScaler()
         cos_scheduler = scheduler
 
-        # EarlyStopping 객체 초기화
         early_stopping = EarlyStopping(patience=patience, mode='min', verbose=True, path=cfg.save_file_name)
 
         for epoch in range(cfg.num_epoch):
@@ -289,9 +287,6 @@ def main(cfg, arg):
     criterion = Loss_Selector().get_loss(cfg.loss)
     optimizer = optim.Adam(params=model.parameters(), lr=cfg.learning_rate, weight_decay=1e-6)
     scheduler = Scheduler_Selector(num_epoch=cfg.num_epoch).get_scheduler(cfg.scheduler, optimizer=optimizer)
-    
-    # model_tk = ModelSelector()
-    # model_tk.get_model('SAM')
     
     set_seed()
 

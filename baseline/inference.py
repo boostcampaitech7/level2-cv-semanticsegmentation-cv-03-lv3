@@ -17,7 +17,6 @@ import ttach as tta
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a segmentation model")
-    # config_path를 명령줄 인자로 받을 수 있게 함
     parser.add_argument('--config', type=str, required=True, help="Path to the config.yaml file")
     return parser.parse_args()
 
@@ -65,8 +64,8 @@ def main(cfg):
             self.model = model
 
         def forward(self, images):
-            outputs = self.model(images)  # 모델 호출
-            return outputs[0] # 텐서라면 그대로 반환
+            outputs = self.model(images)
+            return outputs[0]
             
     def test(model, data_loader, thr=0.5):
         tta_transforms = tta.Compose(
@@ -130,11 +129,8 @@ def main(cfg):
 
 
 if __name__ == '__main__':
-
-    # 명령줄 인자로 받은 config_path
     args = parse_args()
 
-    # config.yaml 파일 경로
     with open(args.config, 'r') as f:
         cfg = OmegaConf.load(f)
 

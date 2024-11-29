@@ -18,10 +18,10 @@ class Model_Selector:
     def unet_plus_plus(self, in_channels=3, out_channels=29, features=(64, 128, 256, 512, 1024, 1024)):
         """ monai의 BasicUNetPlusPlus 모델 생성 """
         model = BasicUNetPlusPlus(
-            spatial_dims=2,               # 이미지 차원 (2D 또는 3D)
-            in_channels=in_channels,      # 입력 채널 수
-            out_channels=out_channels,    # 출력 채널 수
-            features=features             # 각 레벨의 필터 수
+            spatial_dims=2,            
+            in_channels=in_channels,
+            out_channels=out_channels,  
+            features=features   
         )
         return model
 
@@ -34,7 +34,7 @@ class Model_Selector:
     def unetplusplus_smp(self, encoder_name="timm-efficientnet-b0", num_classes=29):
         """ segmentation_models.pytorch의 Unet++ 모델 생성 """
         model = smp.UnetPlusPlus(
-            encoder_name=encoder_name,  # Encoder 모델 선택 (예: resnet34, resnet50)
+            encoder_name=encoder_name, 
             encoder_weights="imagenet",
             in_channels=3,
             classes=num_classes
