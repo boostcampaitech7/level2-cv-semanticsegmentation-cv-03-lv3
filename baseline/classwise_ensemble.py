@@ -33,6 +33,8 @@ def decode_rle_to_mask(rle, height, width):
 input_path = "./ens_in"
 path=glob.glob(f"{input_path}/*.csv")
 dfs=[pd.read_csv(file) for file in path]
+print(dfs[0])
+print(dfs[1])
 # 29 * 288
 # df length를 29개씩 끊어서 처리
 for i,k in zip(tqdm(range(0, len(dfs[0]), 29)),tqdm(range(0, len(dfs[1]), 8))):#한 이미지씩 
