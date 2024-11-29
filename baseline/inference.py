@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 
 from dataset import XRayInferenceDataset
 
+import ttach as tta
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a segmentation model")
@@ -58,24 +59,40 @@ def main(cfg):
         runs[1::2] -= runs[::2]
         return ' '.join(str(x) for x in runs)
 
-    
+    class ModelOutputWrapper(torch.nn.Module):
+        def __init__(self, model):
+            super().__init__()
+            self.model = model
+
+        def forward(self, images):
+            outputs = self.model(images)  # 모델 호출
+            return outputs[0] # 텐서라면 그대로 반환
+            
     def test(model, data_loader, thr=0.5):
+        tta_transforms = tta.Compose(
+            [
+                tta.HorizontalFlip(),
+                tta.Multiply(factors=[0.9, 1, 1.1,1.2])
+            ]
+        )
         model = model.cuda()
         model.eval()
-
         rles = []
         filename_and_class = []
         with torch.no_grad():
 
             for step, (images, image_names) in tqdm(enumerate(data_loader), total=len(data_loader)):
-                images = images.cuda()    
-                outputs = model(images)
+                images = images.cuda()
+                print('TTa start')    
+                tta_model = tta.SegmentationTTAWrapper(model,tta_transforms)
+                outputs = tta_model(images)
+                
 
                 if isinstance(outputs, dict):
                     outputs = outputs['out']
                 elif isinstance(outputs, list):
                     outputs = outputs[0]
-                
+
                 outputs = F.interpolate(outputs, size=(2048, 2048), mode="bicubic")
                 outputs = torch.sigmoid(outputs)
                 outputs = (outputs > thr).detach().cpu().numpy()
@@ -93,12 +110,12 @@ def main(cfg):
     test_dataset = XRayInferenceDataset(transforms=tf,TEST_IMAGE_ROOT=cfg.test_image_root, pngs_inference=pngs_inference)
     test_loader = DataLoader(
         dataset=test_dataset, 
-        batch_size=4,
+        batch_size=1,
         shuffle=False,
         num_workers=4,
         drop_last=False
         )
-    
+    model = ModelOutputWrapper(model)
     rles, filename_and_class = test(model, test_loader)
     classes, filename = zip(*[x.split("_") for x in filename_and_class])
     image_name = [os.path.basename(f) for f in filename]

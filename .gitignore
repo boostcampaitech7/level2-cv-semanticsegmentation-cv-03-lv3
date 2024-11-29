@@ -169,3 +169,13 @@ cython_debug/
 
 # annotations
 *.json
+
+# config
+*.yaml
+
+# output
+*.wandb
+*.csv
+*.pt
+nohup.out
+latest-run

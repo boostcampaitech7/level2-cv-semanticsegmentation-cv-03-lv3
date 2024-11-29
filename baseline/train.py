@@ -73,20 +73,14 @@ def main(cfg, arg):
     if not os.path.exists(cfg.save_dir):                                                           
         os.makedirs(cfg.save_dir)
 
-    tf_geometry = A.OneOf([
-            A.HorizontalFlip(p=0.3),  
-            A.Rotate(limit=(-45, 45), p=0.3)
-        ], p=1.0) 
-
     tf_pixel = A.OneOf([
-            A.CLAHE(clip_limit=2.0, tile_grid_size=(8, 8), p=0.3),
-            A.Sharpen(alpha=(0.1, 0.5), lightness=(0.5, 1.5), p=0.3),
-            A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.3)
+            A.CLAHE(clip_limit=2.0, tile_grid_size=(8, 8), p=0.5),
+            A.Sharpen(alpha=(0.1, 0.5), lightness=(0.5, 1.5), p=0.5)
+            A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5)
         ], p=1.0)  
 
     tf_train = A.Compose([
-        A.Resize(cfg.image_size, cfg.image_size), 
-        tf_geometry,     
+        A.Resize(cfg.image_size, cfg.image_size),     
         tf_pixel         
     ])
 
@@ -205,7 +199,7 @@ def main(cfg, arg):
 
         best_dice = 0.
         scaler = GradScaler()
-        scheduler = scheduler
+        cos_scheduler = scheduler
 
         # EarlyStopping 객체 초기화
         early_stopping = EarlyStopping(patience=patience, mode='min', verbose=True, path=cfg.save_file_name)
@@ -237,10 +231,15 @@ def main(cfg, arg):
 
                     optimizer.zero_grad()
 
+                if isinstance(scheduler, optim.lr_scheduler.ReduceLROnPlateau):
+                    lr = optimizer.param_groups[0]['lr']
+                else:
+                    lr = scheduler.get_last_lr()[0]
+
                 wandb.log({
                     "Epoch" : epoch,
                     "train/loss": loss.item(),
-                    "train/learning_rate": scheduler.get_last_lr()[0]
+                    "train/learning_rate": lr
                 }, step=epoch)
 
                 if (step + 1) % 25 == 0:
@@ -251,7 +250,12 @@ def main(cfg, arg):
                         f'Loss: {round(loss.item(),4)}'
                     )
 
-            scheduler.step()
+            if epoch < 0:
+                scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=3, verbose=True, factor=0.5)
+                scheduler.step(loss)
+            else:
+                scheduler = cos_scheduler
+                scheduler.step()
 
             if (epoch + 1) % cfg.val_every == 0:
                 dice,  dices_per_class, val_loss = validation(epoch + 1, model, val_loader, criterion)
