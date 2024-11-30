@@ -79,7 +79,7 @@ Bone Segmentation은 인공지능 분야에서 중요한 응용 분야 중 하�
 
 프로젝트 세부 일정
 
-![스크린샷 2024-11-13 오후 11 48 45](https://github.com/user-attachments/assets/44c4e493-47e0-4448-98b7-d758e6d1afb1)
+![schedule](https://github.com/user-attachments/assets/fad69118-9c1d-4c84-884f-d74df9e8c543)
 
 ## 💻 개발 환경
 
@@ -91,11 +91,6 @@ Bone Segmentation은 인공지능 분야에서 중요한 응용 분야 중 하�
 - Framework : PyTorch
 - Collaborative Tool : Git, Wandb, Notion
 ```
-
-## 🏆 프로젝트 결과
-
-- Public
-- Private 
 
 ## 📁 데이터셋 구조
 
@@ -140,38 +135,90 @@ Bone Segmentation은 인공지능 분야에서 중요한 응용 분야 중 하�
 📦level2-cv-semanticsegmentation-cv-03-lv3
  ┣ 📂.github
  ┃ ┗ 📂ISSUE_TEMPLATE
+ ┃   ┗ 📜bug_report_template.yaml
+ ┃   ┗ 📜documentation_issue_template.yaml
+ ┃   ┗ 📜enhancement_request_template.yaml
+ ┃   ┗ 📜feature_request_template.yaml
+ ┃ ┗ 📜.keep
+ ┃ ┗ 📜pull_request_templat.md
+ ┣ 📂EDA
+ ┃ ┗ 📜EDA.ipynb
+ ┣ 📂baseline
+ ┃ ┗ 📂config
+ ┃   ┗ 📜base_config.yaml
+ ┃   ┗ 📜setting.txt
+ ┃ ┗ 📂utils
+ ┃   ┗ 📂ensemble_input
+ ┃     ┗ 📜9542.csv
+ ┃     ┗ 📜9680.csv
+ ┃   ┗ 📂wandb
+ ┃     ┗ 📜wandb.ipynb
+ ┃   ┗ 📜classwise_ensemble.py
+ ┃   ┗ 📜crop_to_2048.ipynb
+ ┃   ┗ 📜early_stop.py
+ ┃   ┗ 📜hard_ensemble.py
+ ┃   ┗ 📜visualize_test.ipynb
+ ┃   ┗ 📜visualize_train.ipynb
+ ┃   ┗ 📜wandb.py
+ ┃ ┗ 📜dataset.py
+ ┃ ┗ 📜inference.py
+ ┃ ┗ 📜loss.py
+ ┃ ┗ 📜model.py
+ ┃ ┗ 📜model_tk.py
+ ┃ ┗ 📜model_ui.py
+ ┃ ┗ 📜scheduler.py
+ ┃ ┗ 📜train.py
+ ┣ 📂baseline_monai/cv-03
+ ┃ ┗ 📂configs
+ ┃   ┗ 📜base_train.yaml
+ ┃ ┗ 📂loss
+ ┃   ┗ 📜base_loss.py
+ ┃   ┗ 📜loss_selector.py
+ ┃ ┗ 📂models
+ ┃   ┗ 📜base_model.py
+ ┃   ┗ 📜model_selector.py
+ ┃   ┗ 📜monai_unet.py
+ ┃   ┗ 📜monai_unetplusplus.py
+ ┃ ┗ 📂scheduler
+ ┃   ┗ 📜scheduler_selector.py
+ ┃ ┗ 📂utils
+ ┃   ┗ 📜wandb.py
+ ┃ ┗ 📜dataset.py
+ ┃ ┗ 📜inference.py
+ ┃ ┗ 📜train.py
+ ┃ ┗ 📜trainer.py
+ ┣ 📜.gitignore
+ ┣ 📜Capitate_crop.ipynb
+ ┣ 📜README.md
+ ┣ 📜SAM_sample.ipynb
 ```
+
+### baseline code 설명
 
 #### 1) `train.py`
 
-- 모델 학습을 수행하는 함수
+- argparse를 통해 설정 값을 받아 모델 학습을 수행하는 스크립트
 
-#### 2) `seed.py`
-
-- 모든 랜덤 연산에서 동일한 결과를 재현할 수 있도록 시드를 설정하는 파일
-- random, numpy, torch 라이브러리와 관련된 시드 설정 및 CUDA 관련 고정 설정
-
-#### 3) `model.py`
+#### 2) `model.py`
 
 - 모델을 정의한 파일
-- 입력된 데이터를 모델에 전달하여 예측을 수행하는 forward 메서드 포함
+- Model_Selector 클래스로 UNet++, DeepLabV3 등의 모델 선택 가능
 
-#### 4) `main.py`
+#### 3) `inference.py`
 
-- 학습과 추론을 위한 메인 스크립트로, argparse를 통해 설정 값을 받아 모델 학습과 추론을 수행
+- 학습된 모델을 불러와 예측값을 반환하는 스크립트
 
-#### 5) `inference.py`
+#### 4) `dataset.py`
 
-- 예측값을 반환
+- 학습 및 추론 데이터를 로드하는 클래스를 정의한 파일
 
-#### 6) `dataset.py`
+#### 5) `loss.py`
 
-- 학습 및 추론 데이터를 로드하는 CustomDataset 클래스를 정의한 파일
-- 이미지 데이터를 로드하고, 주어진 변환(transform)을 적용하여 반환하며, 학습 또는 추론 모드에 따라 라벨과 함께 데이터를 반환
+- 학습 시에 사용하는 다양한 loss를 정의하고 선택하는 스크립트
 
-#### 7) `augmentation.py`
+#### 6) `scheduler.py`
 
-- 다양한 데이터 증강 기법을 적용하는 augmentation 클래스 정의
+- 학습 시에 사용하는 다양한 scheduler를 정의하고 선택하는 스크립트
 
 <br />
 
@@ -182,6 +229,16 @@ Bone Segmentation은 인공지능 분야에서 중요한 응용 분야 중 하�
 - scikit-learn==1.5.2
 - albumentations==1.4.18
 - matplotlib==3.9.2
+- os
+- random
+- datetime
+- cv2
+- numpy
+- tqdm
+- omegaconf
+- argparse
+- torch
+- wandb
 
 `pip install -r requirements.txt`
 
@@ -191,92 +248,60 @@ Bone Segmentation은 인공지능 분야에서 중요한 응용 분야 중 하�
 
 #### 학습 및 체크포인트 저장
 
-`python main.py --train_dir ../data/train --train_csv ../data/train.csv --test_dir ../data/test --test_csv ../data/test.csv --batch_size 16 --resize_height 448 --resize_width 448 --learning_rate 1e-4 --max_epochs 50`
+`python train.py --config base_config.yaml`
 
-#### 체크포인트에서 학습 재개
+#### 추론
 
-`python main.py --train_dir ../data/train --train_csv ../data/train.csv --test_dir ../data/test --test_csv ../data/test.csv --resume_training --batch_size 16 --resize_height 448 --resize_width 448`
+`python inference.py --config base_config.yaml`
 
-#### `argparse` 인자 설명
+#### `base_config.yaml` 설명
 
 <details>
 <summary>클릭해서 펼치기/접기</summary>
 
-1. **`--train_dir` (필수 인자)**:
-   - **설명**: 학습 데이터가 저장된 디렉토리 경로를 설정합니다.
-   - **예시**: `--train_dir ../data/train`
+1. **`Data root`**:
+   - **설명**: 학습 이미지, annotation 데이터가 저장된 디렉토리 경로를 설정합니다.
+   - **예시**: image_root: `/data/ephemeral/home/level2-cv-semanticsegmentation-cv-03-lv3/data/train/DCM`
+              label_root: `/data/ephemeral/home/level2-cv-semanticsegmentation-cv-03-lv3/data/train/outputs_json`
 
-2. **`--train_csv` (필수 인자)**:
+2. **`Hyperparameter`**:
 
-   - **설명**: 학습 데이터의 이미지 경로와 레이블이 포함된 CSV 파일 경로를 설정합니다.
-   - **예시**: `--train_csv ../data/train.csv`
+   - **설명**: 학습 시 사용되는 하이퍼 파라미터(배치 사이즈, 학습률, random seed)를 설정합니다.
+   - **예시**: train_batch_size: 4
+              val_batch_size: 2
+              learning_rate: 1e-4
+              random_seed: 42
 
-3. **`--test_dir` (필수 인자)**:
+3. **`Train`**:
 
-   - **설명**: 테스트 데이터가 저장된 디렉토리 경로를 설정합니다.
-   - **예시**: `--test_dir ../data/test`
+   - **설명**: 학습 시 사용하는 모델, epoch, validation 주기, 손실 함수, 스케줄러, 이미지 사이즈, accumulation step, patience를 설정합니다.
+   - **예시**: model: 'unetplusplus'
+              num_epoch: 60
+              val_every: 5
+              loss: 'diceiou_loss'
+              scheduler: 'CosineAnnealingWarmRestarts'
+              image_size: 1024
+              accumulation_steps: 4
+              patience: 3
 
-4. **`--test_csv` (필수 인자)**:
+4. **`Test`**:
 
-   - **설명**: 테스트 데이터의 이미지 경로와 ID가 포함된 CSV 파일 경로를 설정합니다.
-   - **예시**: `--test_csv ../data/test.csv`
+   - **설명**: 추론 이미지가 저장된 디렉토리 경로를 설정합니다.
+   - **예시**: test_image_root: "/data/ephemeral/home/level2-cv-semanticsegmentation-cv-03-lv3/data/test/DCM"
 
-5. **`--save_dir` (선택적 인자, 기본값: `./model_checkpoints`)**:
+5. **`Save directory`**:
 
-   - **설명**: 학습된 모델 체크포인트를 저장할 디렉토리 경로를 설정합니다.
-   - **예시**: `--save_dir ./checkpoints`
+   - **설명**: 학습된 모델, 추론 결과를 저장할 경로와 파일 이름을 설정합니다.
+   - **예시**: save_dir: "checkpoints"
+              save_file_name: "unet++_diceiou_best_model.pt"
+              csv_file_name: "output_unet++_diceiou.csv"
 
-6. **`--log_dir` (선택적 인자, 기본값: `./training_logs`)**:
+6. **`Project name`**:
 
-   - **설명**: 학습 로그를 저장할 디렉토리 경로를 설정합니다.
-   - **예시**: `--log_dir ./logs`
-
-7. **`--batch_size` (선택적 인자, 기본값: `32`)**:
-
-   - **설명**: 학습과 추론 시 사용할 배치 크기를 설정합니다.
-   - **예시**: `--batch_size 16`
-
-8. **`--learning_rate` (선택적 인자, 기본값: `1e-5`)**:
-
-   - **설명**: 학습 시 사용하는 학습률을 설정합니다.
-   - **예시**: `--learning_rate 0.001`
-
-9. **`--weight_decay` (선택적 인자, 기본값: `0.01`)**:
-
-   - **설명**: 옵티마이저에서 사용하는 가중치 감소값을 설정합니다.
-   - **예시**: `--weight_decay 0.001`
-
-10. **`--max_epochs` (선택적 인자, 기본값: `50`)**:
-
-    - **설명**: 학습할 최대 epoch 수를 설정합니다.
-    - **예시**: `--max_epochs 100`
-
-11. **`--accumulation_steps` (선택적 인자, 기본값: `8`)**:
-
-    - **설명**: 그래디언트 누적을 위한 스텝 수를 설정합니다.
-    - **예시**: `--accumulation_steps 4`
-
-12. **`--patience` (선택적 인자, 기본값: `5`)**:
-
-    - **설명**: 학습 중 조기 종료(Early Stopping)를 위한 patience를 설정합니다. 이 값은 검증 손실이 개선되지 않을 때 몇 번의 에포크를 더 실행할지 결정합니다.
-    - **예시**: `--patience 10`
-
-13. **`--resume_training` (선택적 인자)**:
-
-    - **설명**: 가장 최근의 체크포인트에서 학습을 재개할지 여부를 설정합니다. 이 플래그를 추가하면, 학습이 중단된 체크포인트에서 이어서 학습이 가능합니다.
-    - **예시**: `--resume_training`
-
-14. **`--resize_height` (선택적 인자, 기본값: `448`)**:
-
-    - **설명**: 이미지 변환 시 이미지의 높이를 설정합니다.
-    - **예시**: `--resize_height 512`
-
-15. **`--resize_width` (선택적 인자, 기본값: `448`)**:
-    - **설명**: 이미지 변환 시 이미지의 너비를 설정합니다.
-    - **예시**: `--resize_width 512`
+   - **설명**: 실험 주제와 설명을 기술합니다.
+   - **예시**: project_name: '실험 주제'
+              detail: '세부 내용'
 
 </details>
 
 <br />
-
-## ✏️ Wrap-Up Report
