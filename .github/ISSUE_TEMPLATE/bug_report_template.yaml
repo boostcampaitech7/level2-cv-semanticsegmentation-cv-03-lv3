@@ -1,0 +1,38 @@
+name: Bug Report Template
+description: 버그 신고할 때 쓰는 템플릿
+title: "[Bug]: Bug Title"
+labels: ["bug"]
+
+body:
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Bug Description
+      description: 발생한 bug에 대한 설명을 작성
+      placeholder: 기능에 대해서 상세하게 적어주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes: 
+      label: Environment Setting
+      description: 환경 설정에 대한 정보를 작성
+      placeholder: 버그를 재현할 수 있도록 최대한 세분화 해서 작성해 주세요.
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Expected Behavior
+      description: 예상 작동 결과
+      placeholder: 정상적으로 작동했을 때의 동작을 작성해주세요.
+    validations:
+      required: true
+      
+  - type: textarea
+    attributes:
+      label: Actual Behavior
+      description: 실제 작동 결과(Bug)
+      placeholder: 실제로 발생한 문제를 작성해 주세요(Output 참조 가능)
+    validations:
+      required: true

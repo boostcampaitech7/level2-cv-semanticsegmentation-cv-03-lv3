@@ -1,0 +1,22 @@
+name: Documentation Issue Template
+description: 문서와 관련된 문제나 수정 사항을 보고할 때 쓰는 템플릿
+title: "[Documentation]: Issue Title"
+labels: ["documentation"]
+
+body:
+  - type: textarea
+    id: doc-description
+    attributes:
+      label: Documentation Description
+      description: 문서에서 발생한 문제나 개선해야 할 사항에 대해 작성
+      placeholder: 문서의 어떤 부분이 잘못되었거나 누락되었는지 구체적으로 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Suggested Changes
+      description: 문서에서 개선이 필요한 부분에 대한 제안을 작성
+      placeholder: 예를 들어, 어떤 내용을 추가하거나 수정할 수 있을지 구체적으로 작성해주세요.
+    validations:
+      required: false

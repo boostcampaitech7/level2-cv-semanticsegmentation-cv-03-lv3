@@ -1,0 +1,38 @@
+name: Feature Request Template
+description: 기능 추가(요청)할 때 쓰는 템플릿
+title: "[Feature]: Feature Title"
+labels: ["feature"]
+
+body:
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature Description
+      description: 작업할 Feature에 대한 설명을 작성
+      placeholder: 기능에 대해서 상세하게 적어주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes: 
+      label: Detail
+      description: 할 일을 체크박스 형태로 작성
+      placeholder: 최대한 세분화 해서 작성해 주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Expected Effect
+      description: 기능을 통해 기대하는 효과 작성
+      placeholder: 모델의 성능 향상, 가설 검정, 학습 소요 시간 단축 등 기능의 목적을 서술해 주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Reference (Optional)
+      description: 참고 자료가 있다면 작성
+      placeholder: 논문, 학술지, 블로그 등 참고 링크를 작성해 주세요.
+    validations: 
+      required: false
