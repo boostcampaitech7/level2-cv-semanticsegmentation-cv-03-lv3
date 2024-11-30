@@ -165,17 +165,6 @@ cython_debug/
 *.tar.gz
 *.jpg
 *.png
-*.xlsx
 
 # annotations
 *.json
-
-# config
-*.yaml
-
-# output
-*.wandb
-*.csv
-*.pt
-nohup.out
-latest-run
