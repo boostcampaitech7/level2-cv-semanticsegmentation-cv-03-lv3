@@ -1,0 +1,22 @@
+name: Enhancement Request Template
+description: 기존 기능을 개선하거나 최적화할 때 쓰는 템플릿
+title: "[Enhancement]: Feature Title"
+labels: ["enhancement"]
+
+body:
+  - type: textarea
+    id: enhancement-description
+    attributes:
+      label: Enhancement Description
+      description: 개선하려는 기능에 대해 작성
+      placeholder: 어떤 기능을 어떻게 개선하고 싶은지 구체적으로 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Potential Impact
+      description: 개선 사항이 시스템이나 사용자 경험에 미치는 영향을 설명
+      placeholder: 이 개선이 성능이나 사용자 경험에 어떻게 영향을 미칠지 작성해주세요.
+    validations:
+      required: false

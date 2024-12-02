@@ -1,0 +1,22 @@
+''' 
+아래에 있는 list를 보고 yaml 파일 수정 후 train.py 실행
+
+# Train 참고
+    [model] 
+        - unetplusplus
+        - deeplabv3_resnet101
+        - SAM
+
+    [loss]
+        - BCEWithLogitLoss
+        - calc_loss
+        - dice_loss
+        - iou_loss
+        - bcedice_loss
+        - diceiou_loss
+
+    [scheduler]
+        - MultiStepLR
+        - CosineAnnealingLR
+        - CosineAnnealingWarmRestarts
+'''
