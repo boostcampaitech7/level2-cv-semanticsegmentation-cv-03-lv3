@@ -3,7 +3,7 @@ import wandb
 import os 
 
 def set_wandb(configs, arg):
-    wandb.login(key="5dbe719a1633f39d630190b12a8c1fc3f311faa6")
+    wandb.login(key="Your Wandb API")
     wandb.init(
         entity= "naver_cv03",
         project= "Hand Bone Image Segmentation",
